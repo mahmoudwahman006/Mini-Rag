@@ -1,0 +1,16 @@
+services: 
+  mongodb:
+    image: mongo:8.2-rc-noble
+    container_name: mongodb
+    restart: always         # if it's faild it will restart automatically
+    ports:
+      - "27007:27017"       # default is 27017, but we can map it to 27007 on the host
+    volumes:
+      - ./mongodb:/data/db  # save data in mongodb folder on the host
+    networks:
+      - backend             # virtual network name is backend 
+    
+
+
+networks:
+  backend:
