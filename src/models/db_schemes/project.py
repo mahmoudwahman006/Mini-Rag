@@ -5,7 +5,7 @@ from bson.objectid import ObjectId
 
 
 class Project(BaseModel):
-    _id: Optional[ObjectId]
+    id: Optional[ObjectId] = Field(default=None, alias="_id")  
     project_id: str = Field(...,min_length=1, description="Unique identifier for the project")
 
 
@@ -20,3 +20,4 @@ class Project(BaseModel):
     # This is necessary to allow ObjectId to be used as a field type in the Pydantic model (Pydantic do not understand ObjectId by default, so we need to allow arbitrary types)
     class Config:        
         arbitrary_types_allowed = True
+        populate_by_name = True         # using the alias #########################################################

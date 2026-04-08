@@ -1,12 +1,15 @@
-from fastapi import FastAPI, APIRouter, Depends, UploadFile, status
+from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request 
 from fastapi.responses import JSONResponse
-import os
 from helpers.config import get_settings, Settings                     # the pydantic way:
 from controllers import DataController, ProjectController , ProcessController            # with using __init__.py
 import aiofiles
 from models import ResponseSignal
 import logging
 from .schemes.data import ProcessRequest
+from models.ProjectModel import ProjectModel
+from models.ChunkModel import ChunkModel
+from models.db_schemes import DataChunk, project 
+
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -18,9 +21,13 @@ data_router = APIRouter(
 @data_router.post("/upload/{project_id}")
 
 # function end_point for uploading file
-async def upload_data(project_id: str, file: UploadFile,
+async def upload_data(request:Request, project_id: str, file: UploadFile,
                       app_settings: Settings = Depends(get_settings)):
         
+    
+    project_model = ProjectModel(db_client=request.app.db_client) #########################
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
     
     # validate the file properties
     data_controller = DataController()
@@ -62,7 +69,8 @@ async def upload_data(project_id: str, file: UploadFile,
     return JSONResponse(
             content={
                 "signal": ResponseSignal.FILE_UPLOAD_SUCCESS.value,
-                "file_id": file_id
+                "file_id": file_id,
+                # "project_id": str(project._id) # no need for the user to know this info 
             }
         )
 
@@ -70,14 +78,29 @@ async def upload_data(project_id: str, file: UploadFile,
 @data_router.post("/process/{project_id}")
 
 # function end_point for uploading file
-async def process_endpoint(project_id: str, process_request:ProcessRequest ):
+async def process_endpoint(project_id: str, process_request:ProcessRequest, request:Request ): ###### request
     file_id= process_request.file_id
+    chunk_size = process_request.chunk_size
+    overlap_size = process_request.overlap_size
+    do_reset = process_request.do_reset
+
+
+    project_model = ProjectModel(db_client=request.app.db_client)
+
+    project = await project_model.get_project_or_create_one(project_id=project_id)
     
     
     
     Process_controller = ProcessController(project_id=project_id)
+    
     file_content = Process_controller.get_file_content(file_id=file_id)
-    file_chuunks = Process_controller.process_file_content(file_content=file_content, file_id=file_id , chunk_size=process_request.chunk_size, overlap_size=process_request.overlap_size)
+    
+    file_chuunks = Process_controller.process_file_content(
+        file_content=file_content,
+          file_id=file_id ,
+            chunk_size=chunk_size,
+              overlap_size=overlap_size
+              )
     
     if file_chuunks is None or len(file_chuunks) == 0:
         return JSONResponse(
@@ -86,4 +109,37 @@ async def process_endpoint(project_id: str, process_request:ProcessRequest ):
                 "signal": ResponseSignal.FILE_PROCESSING_FAILED.value
             }
         )
-    return file_chuunks
+    
+    file_chunks_records = [
+
+            DataChunk(
+
+                chunk_text=chunk.page_content,
+                chunk_metadata=chunk.metadata,
+                chunk_order= i+1,
+                chunk_project_id=project.id
+            )
+            for i, chunk in enumerate(file_chuunks)
+         
+    ]
+
+    chunk_model = ChunkModel(db_client=request.app.db_client)
+
+
+##  delete if do_reset == 1 to delete all the chunks that belong to the project before inserting the new chunks, this is useful when we want to re-process the same file with different chunk size or overlap size, or when we want to process a new file and we want to delete the old chunks that belong to the same project to avoid confusion and save storage space.
+    if do_reset == 1:
+        logger.info(f"deleting chunks of : {project_id}, type of project id : {type(project_id)}") ################################## 
+
+        delete = await chunk_model.delete_chunks_by_project_id(project_id=project.id)
+
+        logger.info(f"deleted chunks: {delete}") ###################################
+        
+## insert the new chunks into the database and return the number of inserted chunks in the response
+    num_records = await chunk_model.insert_many_chunks(chunks=file_chunks_records)
+
+    return JSONResponse(
+        content={
+            "signal": ResponseSignal.FILE_PROCESSING_SUCCESS.value,
+            "Inserted_chunks": num_records
+        }
+    )
