@@ -1,12 +1,20 @@
 services: 
   mongodb:
-    image: mongo:8.2-rc-noble
+    image: mongo:8.2.7-rc0                        # image: mongo:8.2-rc-noble  # getting from docker hub
     container_name: mongodb
     restart: always         # if it's faild it will restart automatically
     ports:
-      - "27007:27017"       # default is 27017, but we can map it to 27007 on the host
+      - "27006:27017"       # default is 27017, but we can map it to 27007 on the host
     volumes:
       - ./mongodb:/data/db  # save data in mongodb folder on the host
+                            # if you have an error for permission denied,
+                            # you can change path of the folder to : mongodb:/data/db
+                            # then add value for mongodb entity at the end after networks section 
+    
+    #environment:
+    #  - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+    #  - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+
     networks:
       - backend             # virtual network name is backend 
     
@@ -14,3 +22,7 @@ services:
 
 networks:
   backend:
+
+#volumes:
+#  mongodb:                # this is the name of the volume that we will use in the mongodb service to save data persistently, so even if we delete the container, the data will not be deleted because it's saved in the volume
+
