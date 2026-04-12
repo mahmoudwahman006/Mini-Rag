@@ -65,4 +65,6 @@ $ cd docker
 
 $ cp .env.example .env
 ```
+- update `.env ` with your credentials
+
 

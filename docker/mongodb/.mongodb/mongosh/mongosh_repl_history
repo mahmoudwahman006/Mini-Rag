@@ -1,0 +1,3 @@
+db.getUsers()
+use admin
+use amin

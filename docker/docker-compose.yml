@@ -12,8 +12,8 @@ services:
                             # then add value for mongodb entity at the end after networks section 
     
     #environment:
-    #  - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-    #  - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    #  - MONGO_INITDB_ROOT_USERNAME=admin                  #${MONGO_INITDB_ROOT_USERNAME}
+    #  - MONGO_INITDB_ROOT_PASSWORD=admin                  #${MONGO_INITDB_ROOT_PASSWORD}
 
     networks:
       - backend             # virtual network name is backend 
