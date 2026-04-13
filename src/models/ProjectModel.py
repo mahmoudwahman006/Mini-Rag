@@ -6,6 +6,7 @@ from .BaseDataModel import BaseDataModel
 from .db_schemes import Project
 from .enums.DataBaseEnum import DataBaseEnum
 from bson.objectid import ObjectId
+from motor.motor_asyncio import AsyncIOMotorClient
 
 
 class ProjectModel(BaseDataModel):
@@ -15,6 +16,34 @@ class ProjectModel(BaseDataModel):
         super().__init__(db_client=db_client)
         
         self.collection = self.db_client[DataBaseEnum.COLLECTION_PROJECT_NAME.value]
+
+
+    # the indexing task :
+    # very important to understand 
+    @classmethod
+    async def create_instance(cls, db_client: object):
+
+        instance = cls(db_client=db_client)  # Create an instance of the ProjectModel class with the provided database client # call the init function
+        
+        await instance.init_collection()     # Initialize the collection (create it if it does not exist and set up indexes)
+        
+        return instance  # Return the initialized instance of the ProjectModel class
+
+
+
+    async def init_collection(self):
+
+        all_collections = await self.db_client.list_collection_names()  # List all collection names in the database
+        
+        if DataBaseEnum.COLLECTION_PROJECT_NAME.value not in all_collections:  # Check if the project collection exists
+
+            self.collection = await self.db_client.create_collection(DataBaseEnum.COLLECTION_PROJECT_NAME.value)  # Create the project collection if it does not exist
+            
+        indexes = Project.get_indexes()  # Get the indexes defined in the Project model
+            
+        for index in indexes:
+            await self.collection.create_index(index["key"], name=index["name"], unique=index["unique"])  # Create each index in the collection using the specified key, name, and uniqueness constraint
+
 
     async def create_project(self, project: Project):
 

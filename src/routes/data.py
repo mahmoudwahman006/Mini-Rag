@@ -20,12 +20,14 @@ data_router = APIRouter(
 
 @data_router.post("/upload/{project_id}")
 
+# adding await + create instance for the project model and chunk model for calling the indexing functions :
+
 # function end_point for uploading file
 async def upload_data(request:Request, project_id: str, file: UploadFile,
                       app_settings: Settings = Depends(get_settings)):
         
     
-    project_model = ProjectModel(db_client=request.app.db_client) #########################
+    project_model = await ProjectModel.create_instance(db_client=request.app.db_client) ######################### 
     project = await project_model.get_project_or_create_one(project_id=project_id)
 
     
@@ -85,7 +87,7 @@ async def process_endpoint(project_id: str, process_request:ProcessRequest, requ
     do_reset = process_request.do_reset
 
 
-    project_model = ProjectModel(db_client=request.app.db_client)
+    project_model = await ProjectModel.create_instance(db_client=request.app.db_client)  ###################
 
     project = await project_model.get_project_or_create_one(project_id=project_id)
     
@@ -123,14 +125,18 @@ async def process_endpoint(project_id: str, process_request:ProcessRequest, requ
          
     ]
 
-    chunk_model = ChunkModel(db_client=request.app.db_client)
+    chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
 
-
+ 
 ##  delete if do_reset == 1 to delete all the chunks that belong to the project before inserting the new chunks, this is useful when we want to re-process the same file with different chunk size or overlap size, or when we want to process a new file and we want to delete the old chunks that belong to the same project to avoid confusion and save storage space.
     if do_reset == 1:
         logger.info(f"deleting chunks of : {project_id}, type of project id : {type(project_id)}") ################################## 
 
-        delete = await chunk_model.delete_chunks_by_project_id(project_id=project.id)
+        #delete = await chunk_model.delete_chunks_by_project_id(project_id=project.id)
+        
+        # for deleting all chunks just remove the projet id from the function : 
+        delete = await chunk_model.delete_all_chunks()
+        
 
         logger.info(f"deleted chunks: {delete}") ###################################
         

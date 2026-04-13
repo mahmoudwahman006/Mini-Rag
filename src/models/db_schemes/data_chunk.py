@@ -12,3 +12,16 @@ class DataChunk(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         populate_by_name = True             #########################################################
+
+    # the indexing task :  
+    @classmethod
+    def get_indexes(cls):
+        return [
+            {
+                "key": [
+                    ("chunk_project_id", 1)       # 1 means ascending order, -1 means descending order
+                    ],                      # Create an index on the chunk_project_id field to optimize queries that filter by project ID
+                    "name": "chunk_project_id_index_1",  # Name of the index
+                    "unique": False  # Allow multiple chunks to have the same project ID, since a project can have multiple chunks
+            }
+        ]
