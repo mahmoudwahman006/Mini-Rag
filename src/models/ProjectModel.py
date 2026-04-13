@@ -53,7 +53,7 @@ class ProjectModel(BaseDataModel):
 
         result = await self.collection.insert_one(project.dict(by_alias=True, exclude_unset=True)) # by_alias means use the alias defined in the Pydantic model '_id' # exclude_unset means exclude any argument with default value # Insert the project into the collection
         
-        project._id = result.inserted_id  # Set the _id field of the project to the inserted ID
+        project.id = result.inserted_id  # Set the _id field of the project to the inserted ID
         
         return project  # Return the ID of the inserted document as a string
     
