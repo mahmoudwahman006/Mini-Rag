@@ -94,7 +94,8 @@ async def upload_data(request:Request, project_id: str, file: UploadFile,
 
 # function end_point for uploading file
 async def process_endpoint(project_id: str, process_request:ProcessRequest, request:Request ): ###### request
-    file_id= process_request.file_id
+    
+    #file_id= process_request.file_id                    # removeing file_id becuase it's optional vid 12
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size
     do_reset = process_request.do_reset
@@ -105,60 +106,126 @@ async def process_endpoint(project_id: str, process_request:ProcessRequest, requ
     project = await project_model.get_project_or_create_one(project_id=project_id)
     
     
+
+    # vid 12 automate passing the file_id to the chunking process if the user did not provide it in the request body 
+     
+    project_file_ids = {}
+
+    asset_model = await AssetModel.create_instance(db_client=request.app.db_client)  
+
+    if process_request.file_id :
+
+        asset_record = await asset_model.get_asset_record(asset_project_id=project.id, asset_name=process_request.file_id)
+
+        if asset_record is None:
+
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "signal": ResponseSignal.FILE_ID_ERROR.value
+                }
+            )
+
+        project_file_ids = {asset_record.id: asset_record.asset_name}  # if the file_id is provided in the request body we will use it for processing and ignore the other files that belong to the same project
+
+
+
+
+    else:
+        
+        project_files = await asset_model.get_all_project_assets(asset_project_id=project.id, asset_type=AssetTypeEnum.FILE.value)
+
+        #project_file_ids = [record.asset_name for record in project_files]  # Extract the file IDs from the asset records and convert them to strings
+        
+        project_file_ids = {
+
+            record.id: record.asset_name 
+                for record in project_files
+            
+                }
     
-    Process_controller = ProcessController(project_id=project_id)
     
-    file_content = Process_controller.get_file_content(file_id=file_id)
-    
-    file_chuunks = Process_controller.process_file_content(
-        file_content=file_content,
-          file_id=file_id ,
-            chunk_size=chunk_size,
-              overlap_size=overlap_size
-              )
-    
-    if file_chuunks is None or len(file_chuunks) == 0:
+    # check 
+    if len(project_file_ids) == 0:
+        
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
-                "signal": ResponseSignal.FILE_PROCESSING_FAILED.value
+                "signal": ResponseSignal.NO_FILES_ERROR.value
             }
         )
+    ###########
+
+    Process_controller = ProcessController(project_id=project_id)
     
-    file_chunks_records = [
-
-            DataChunk(
-
-                chunk_text=chunk.page_content,
-                chunk_metadata=chunk.metadata,
-                chunk_order= i+1,
-                chunk_project_id=project.id
-            )
-            for i, chunk in enumerate(file_chuunks)
-         
-    ]
+    num_records = 0
+    num_files = 0
 
     chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
 
- 
-##  delete if do_reset == 1 to delete all the chunks that belong to the project before inserting the new chunks, this is useful when we want to re-process the same file with different chunk size or overlap size, or when we want to process a new file and we want to delete the old chunks that belong to the same project to avoid confusion and save storage space.
+     ##  delete if do_reset == 1 to delete all the chunks that belong to the project before inserting the new chunks, this is useful when we want to re-process the same file with different chunk size or overlap size, or when we want to process a new file and we want to delete the old chunks that belong to the same project to avoid confusion and save storage space.
     if do_reset == 1:
         logger.info(f"deleting chunks of : {project_id}, type of project id : {type(project_id)}") ################################## 
 
-        #delete = await chunk_model.delete_chunks_by_project_id(project_id=project.id)
+        delete = await chunk_model.delete_chunks_by_project_id(project_id=project.id)
         
         # for deleting all chunks just remove the projet id from the function : 
-        delete = await chunk_model.delete_all_chunks()
+        #delete = await chunk_model.delete_all_chunks()
         
 
         logger.info(f"deleted chunks: {delete}") ###################################
+            
+
+    for asset_id, file_id in project_file_ids.items():    # adding all the iteration of the chunking in the for loop to iterate on files                   
+    
+        file_content = Process_controller.get_file_content(file_id=file_id)
+
+        if file_content is None:
+            logger.error(f"File with ID {file_id} does not exist or is not supported for processing.")
+            continue  # Skip to the next file if the current file is not found or not supported
         
-## insert the new chunks into the database and return the number of inserted chunks in the response
-    num_records = await chunk_model.insert_many_chunks(chunks=file_chunks_records)
+        file_chuunks = Process_controller.process_file_content(
+            file_content=file_content,
+              file_id=file_id ,                                          
+                chunk_size=chunk_size,
+                 overlap_size=overlap_size
+                )
+        
+        if file_chuunks is None or len(file_chuunks) == 0:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "signal": ResponseSignal.FILE_PROCESSING_FAILED.value
+                }
+            )
+        
+        file_chunks_records = [
+
+                DataChunk(
+
+                    chunk_text=chunk.page_content,
+                    chunk_metadata=chunk.metadata,
+                    chunk_order= i+1,
+                    chunk_project_id=project.id,
+                    chunk_asset_id= asset_id  # link the chunk to the asset
+                )
+                for i, chunk in enumerate(file_chuunks)
+            
+        ]
+
+        
+    
+   
+    ## insert the new chunks into the database and return the number of inserted chunks in the response
+        #num_records = await chunk_model.insert_many_chunks(chunks=file_chunks_records)
+        num_records += await chunk_model.insert_many_chunks(chunks=file_chunks_records)                  # after adding the for loop we initialize num_record and adding the new values
+        num_files += 1
+
 
     return JSONResponse(
         content={
             "signal": ResponseSignal.FILE_PROCESSING_SUCCESS.value,
-            "Inserted_chunks": num_records
+            "Inserted_chunks": num_records,
+            "Processed_files": num_files
         }
     )

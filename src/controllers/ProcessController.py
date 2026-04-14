@@ -24,6 +24,8 @@ class ProcessController(BaseController):
         file_extension = self.get_file_extension(file_id=file_id)
         file_path = os.path.join(self.project_path, file_id)  # get the full path of the file using the project path and the file id
 
+        if not os.path.exists(file_path):  # check if the file exists in the project path
+            return None  # return None if the file does not exist
 
         if file_extension == ProcessingEnum.PDF.value:  # using the value of the enum to compare with the file extension
             return PyMuPDFLoader(file_path)  # load the pdf file using the PyMuPDFLoader
@@ -33,13 +35,16 @@ class ProcessController(BaseController):
 
         else:
             raise ValueError(f"Unsupported file type: {file_extension}")
-
+        
     def get_file_content(self, file_id:str):
         
         loader = self.get_file_loader(file_id=file_id)
-        documents = loader.load()  # load the content of the file using the appropriate loader
-        return documents 
-    
+        
+        if loader:
+            return loader.load()  # load the content of the file using the appropriate loader
+        
+        return None  # return None if the file does not exist or if the file type is not supported
+
     def process_file_content(self, file_content:list,file_id:str, chunk_size: int=100, overlap_size: int=20):
 
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap_size, length_function=len)  # create an instance of the text splitter with the specified chunk size and overlap size
