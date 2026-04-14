@@ -6,4 +6,10 @@ pydantic-settings==2.2.1
 aiofiles==23.2.1  # vid 7
 langchain==0.1.20 # vid 8
 PyMuPDF==1.24.3   # vid 8
-motor==3.4.0      # vid 9
+#motor==3.4.0      # vid 9
+# fixing error 
+# "ValueError: The 'pymongo' extra is not supported in motor 3.4.0. Please install 'motor[pymongo]' instead."
+pymongo==3.12.3
+motor==2.5.1
+#ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+#pydantic-mongo 2.3.0 requires pymongo<5.0,>=4.3, but you have pymongo 3.12.3 which is incompatible.
