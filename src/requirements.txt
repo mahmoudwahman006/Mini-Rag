@@ -13,3 +13,5 @@ pymongo==3.12.3
 motor==2.5.1
 #ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
 #pydantic-mongo 2.3.0 requires pymongo<5.0,>=4.3, but you have pymongo 3.12.3 which is incompatible.
+
+openai==1.35.13
