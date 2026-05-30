@@ -34,6 +34,17 @@ class OpenAIProvider(LLMInterface):
             self.embedding_model_id = model_id
             self.embedding_size = embedding_size
 
+
+##############################
+
+# note this fun is not in the apstract class but it is a helper function to process the text before embedding it 
+# to increase the performance of the embedding model and make it more accurate | not each provider should use the function.
+
+        def process_text(self, text:str):
+            text = text.strip()
+            text = text[:self.default_input_max_characters] # to make sure that the text is not too long for the embedding model
+            return text
+
 ########################        
         def generate_text(self, prompt: str,chat_history:list = [], max_output_tokens: int = None, temperature: float = None):
             
@@ -64,14 +75,7 @@ class OpenAIProvider(LLMInterface):
             
             return response.choices[0].message.content
         
-##############################
-# note this fun is not in the apstract class but it is a helper function to process the text before embedding it 
-# to increase the performance of the embedding model and make it more accurate | not each provider should use the function.
 
-        def process_text(self, text:str):
-            text = text.strip()
-            text = text[:self.default_input_max_characters] # to make sure that the text is not too long for the embedding model
-            return text
         
 ###################        
         def embed_text(self, text: str, document_type:str=None):
