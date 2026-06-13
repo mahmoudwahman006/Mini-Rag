@@ -5,5 +5,5 @@ class VectorDBEnums(Enum):
 
 
 class DistaceMethodEnums(Enum):
-    COSINE = "COSINE"
-    DOT = "DOT"
+    COSINE = "cosine"
+    DOT = "dot"

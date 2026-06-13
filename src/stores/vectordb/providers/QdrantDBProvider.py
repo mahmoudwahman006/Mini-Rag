@@ -13,9 +13,9 @@ class QdrantDBProvider(VectorDBInterface):
         self.distance_method = None 
         
         if distance_method == DistaceMethodEnums.COSINE.value:
-            self.distance_method = models.COSINE.value
+            self.distance_method = models.Distance.COSINE                   ################## check the distance method in the qdrant documentation, and make sure that it's correct, and check if there is any other distance method that we can use
         elif distance_method == DistaceMethodEnums.DOT.value:
-            self.distance_method = models.DOT.value
+            self.distance_method = models.Distance.DOT                      ################## check the distance method in the qdrant documentation, and make sure that it's correct, and check if there is any other distance method that we can use
 
     def connect(self):
         self.clint = QdrantClient(path=self.db_path)
@@ -37,8 +37,12 @@ class QdrantDBProvider(VectorDBInterface):
 
     def get_collection_info(self, collection_name:str):
 
-        return self.clint.get_collection(collection_name=collection_name)
-    
+        try : 
+
+            return self.clint.get_collection(collection_name=collection_name)
+        except Exception as e:
+            logging.error(f"error while getting collection info : {e}")
+            return None
 
     def delete_collection(self, collection_name:str):
 

@@ -2,6 +2,7 @@
 # Better than load_env in the main.py
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
 
 class Settings(BaseSettings):
 
@@ -20,8 +21,9 @@ class Settings(BaseSettings):
 
     GENERATION_BACKEND: str = None
     EMBEDDING_BACKEND: str = None
-    OPENAI_API_URL: str = None
-    COHERE_API_KEY: str = None
+    OPENAI_API_URL: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+    COHERE_API_KEY: Optional[str] = None
     GENERATION_MODEL_ID: str = None
     EMBEDDING_MODEL_ID: str = None
     EMBEDDING_MODEL_SIZE: int = None

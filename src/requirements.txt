@@ -16,6 +16,6 @@ motor==2.5.1
 
 openai==1.35.13 # vid 14
 
-cohere==4.7.0 # vid 14
+cohere ==5.0.0    # vid 14
 
 qdrant-client==1.9.2 # vid 15

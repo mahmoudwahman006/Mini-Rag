@@ -89,3 +89,12 @@ class ChunkModel(BaseDataModel):
         result = await self.collection.delete_many({})  # Delete all chunks in the collection
         
         return result.deleted_count  # Return the number of deleted chunks
+    
+    async def get_project_chunks(self, project_id: ObjectId, page_number: int = 1, page_size: int = 50):
+
+        # pagination logic : 
+        result = await self.collection.find(
+            {"chunk_project_id": project_id}).skip((page_number - 1) * page_size).limit(page_size).to_list(length=None)  # Find chunks by project ID with pagination
+
+        return [DataChunk(**chunk) for chunk in result]  # Return the list of chunks as Pydantic models (parameter unpacking)
+    
