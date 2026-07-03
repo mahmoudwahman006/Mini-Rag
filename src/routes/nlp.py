@@ -1,13 +1,14 @@
 from fastapi import FastAPI, APIRouter, status, Request 
 from fastapi.responses import JSONResponse
 from models.db_schemes import project
-from routes.schemes.nlp import PushRequest
+from routes.schemes.nlp import PushRequest, SearchRequest
 from helpers.config import get_settings, Settings  
 from models.ProjectModel import ProjectModel
 from models.ChunkModel import ChunkModel 
 from models import ResponseSignal as ResponseEnums
 from controllers import NLPController
 import logging
+import json
 
 ogger = logging.getLogger('uvicorn.error')
 
@@ -48,6 +49,7 @@ async def index_project(request:Request, project_id: str, push_request: PushRequ
    has_records = True
    page_number = 1
    inserted_records_count = 0
+   idx = 0
 
    while has_records:
       
@@ -59,7 +61,11 @@ async def index_project(request:Request, project_id: str, push_request: PushRequ
       has_records = False
       break
 
-    is_inserted = nlp_controller.index_into_vector_db(project=project, chunks=page_chunks, do_reset=push_request.do_reset) 
+    chunks_ids = list(range(idx, idx + len(page_chunks)))
+
+    idx += len(page_chunks)
+
+    is_inserted = await nlp_controller.index_into_vector_db(project=project, chunks=page_chunks, do_reset=push_request.do_reset, chunks_ids=chunks_ids) 
 
     if not is_inserted:
         return JSONResponse(
@@ -105,3 +111,30 @@ async def get_project_indexing_status(request: Request, project_id: str):
             "collection_info": collection_info
         }
     ) 
+
+
+@nlp_router.post("/index/search/{project_id}")
+async def search_index(request: Request, project_id: str, search_request: SearchRequest):
+    project_model = await ProjectModel.create_instance(db_client=request.app.db_client)
+    
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+    
+    nlp_controller = NLPController(
+        vector_db_client=request.app.vector_db_client,
+        generation_client=request.app.generation_client,
+        embedding_client=request.app.embedding_client
+    )
+
+    results =  nlp_controller.search_vector_db_collection(project=project, text=search_request.text, limit=search_request.limit)   
+
+    if not results:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"Signal": ResponseEnums.VECTOR_DB_COLLECTION_SEARCH_FAILED.value}
+        )
+    
+    
+
+
+    return results
+    

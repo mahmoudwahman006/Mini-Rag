@@ -89,15 +89,15 @@ class CohereProvider(LLMInterface):
                 model=self.embedding_model_id, 
                 texts=[self.process_text(text)],
                 input_type=CohereEnums.DOCUMENT.value if document_type == DocumentTypeEnums.DOCUMENT.value else CohereEnums.QUERY.value, # to make the embedding model understand if the text is a document or a query to increase the performance of the embedding
-                output_dimensions=self.embedding_size,
+                #output_dimensions=self.embedding_size,
                 embedding_types=["float"]
 
             )
 
-            if not response or not response.embeddings or len(response.embedding.float) == 0:
+            if not response or not response.embeddings or len(response.embeddings.float_) == 0:
                 self.logger.error("Invalid response from Cohere API for embedding.")
                 return None
-            return response.embeddings.float[0]
+            return response.embeddings.float_[0]
         
         
 #######################

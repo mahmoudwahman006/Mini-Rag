@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Color tokens */
+  --bg: #0b0e11;
+  --panel: #12161b;
+  --panel-raised: #171c22;
+  --border: #232a32;
+  --text: #e6edf3;
+  --text-muted: #7d8590;
+  --accent: #2dd4bf;
+  --accent-dim: #1c8f82;
+  --warning: #f5a524;
+  --error: #f0665a;
+  --success: #2dd4bf;
+
+  /* Type tokens */
+  --font-mono: "JetBrains Mono", monospace;
+  --font-body: "Inter", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+body {
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--accent-dim);
+  color: var(--bg);
+}
+
+/* focus visibility, kept consistent everywhere */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

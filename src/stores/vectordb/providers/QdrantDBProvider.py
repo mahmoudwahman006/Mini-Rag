@@ -71,16 +71,31 @@ class QdrantDBProvider(VectorDBInterface):
             ### client.upsert()  It's the function that actually sends the data to Qdrant. It takes a list of PointStruct objects and writes them to the collection
             ### models.PointStruct is a data structure that represents a single point in the vector database. It contains the vector itself and any associated payload (metadata). When you create an instance of PointStruct, you provide the vector and the payload, which can include the text and any additional metadata you want to store with that point.
             ### upload_points() is a method provided by the Qdrant client that allows you to upload multiple points to a collection in a single operation. It takes the collection name and a list of PointStruct objects as arguments and writes them to the specified collection in the Qdrant database.
+            """    # old one (not working)
             _ =  self.clint.upload_points(                    
                 collection_name=collection_name,
                 points=[
-                    models.PointStruct(
-                        id=record_id,
+                        models.PointStruct(
+                        id=[record_id],
                         vector=vector,
+                        #wait_for_upload=True,                                 ## added for solve the error 
+                        #input_type = "search_document",                       ## added for solve the error
                         payload={
                             "text": text,
                             "metadata": metadata })])
-        
+            """
+            _ =  self.clint.upsert(                    
+                collection_name=collection_name,
+                points=[
+                        models.PointStruct(
+                        id=[record_id],
+                        vector=vector,
+                        #wait_for_upload=True,                                 ## added for solve the error 
+                        #input_type = "search_document",                       ## added for solve the error
+                        payload={
+                            "text": text,
+                            "metadata": metadata })])
+           
         except Exception as e: 
             logging.error(f"error while inserting batch : {e}")
             return False
@@ -95,7 +110,7 @@ class QdrantDBProvider(VectorDBInterface):
             metadata = [None] * len(texts)
 
         if record_ids is None:
-            record_ids = [None] * len(texts)
+            record_ids = list(range(0,len(texts)))
 
         for i in range(0, len(texts), batch_size):
 
@@ -103,11 +118,15 @@ class QdrantDBProvider(VectorDBInterface):
             batch_texts = texts[i:batch_end]
             batch_vectors = vectors[i:batch_end]
             batch_metadata = metadata[i:batch_end]
+            batch_record_ids = record_ids[i:batch_end]
 
             batch_records = [
 
                     models.PointStruct(
+                        id=batch_record_ids[x],
                         vector=batch_vectors[x],
+                        #wait_for_upload=True,                                 ## added for solve the error
+                        #input_type = "search_document",                       ## added for solve the error
                         payload={
                             "text": batch_texts[x],
                             "metadata": batch_metadata[x]
@@ -118,11 +137,15 @@ class QdrantDBProvider(VectorDBInterface):
             ]
 
             try: 
-                    
+                """  old way (not working)  
                 _ =  self.clint.upload_points(                       ### can't find the method upload_records in the documentaion, changed with upsert, or uplaod_points
                     collection_name=collection_name,
                     records = batch_records )
-                
+                """
+                _ =  self.clint.upsert(                       ### can't find the method upload_records in the documentaion, changed with upsert, or uplaod_points
+                    collection_name=collection_name,
+                    points = batch_records )
+                  
             except Exception as e:
                 logging.error(f"error while inserting batch : {e}")
                 return False

@@ -16,4 +16,7 @@ class ResponseSignal(Enum):
     INDEX_VECTOR_STORE_ERROR = "index_vector_store_error"
     INDEX_VECTOR_STORE_SUCCESS = "index_vector_store_success"
     VECTOR_DB_COLLECTION_RETRIVED_SUCCESS = "vector_db_collection_retrived_successfully"
+    VECTOR_DB_COLLECTION_SEARCH_FAILED = "vector_db_collection_search_failed"
+    VECTOR_DB_COLLECTION_SEARCH_FAILED_BASIC = "vector_db_collection_search_failed_basic"
+    VECTOR_DB_COLLECTION_SEARCH_SUCCESS = "vector_db_collection_search_success"
     EMBEDDING_ERROR = "embedding_error"

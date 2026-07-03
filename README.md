@@ -40,11 +40,23 @@ $ cp .env.example .env
 
 Set your environment variables in the `.env` file. Like `OPENAI_API_KEY` value.
 
-## Run the FastAPI server
+## Run the FastAPI server 
 
 ```bash
-$ uvicorn main:app --reload --host 0.0.0.0 --port 5000
+$ uvicorn main:app --reload 
 ```
+
+## ## Frontend Interface Setup
+
+```bash
+$ cd rag-interface
+$ npm install
+$ cp .env.local.example .env.local   # set NEXT_PUBLIC_API_BASE_URL to match the port used above
+$ npm run dev
+```
+
+Runs on `http://localhost:3000`.
+
 
 ## POSTMAN Collection
 
