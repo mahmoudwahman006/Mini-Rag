@@ -2,6 +2,7 @@
 # Better than load_env in the main.py
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
 
 class Settings(BaseSettings):
 
@@ -17,6 +18,22 @@ class Settings(BaseSettings):
 
     MONGO_URL : str
     MONGODB_DATABASE: str
+
+    GENERATION_BACKEND: str = None
+    EMBEDDING_BACKEND: str = None
+    OPENAI_API_URL: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+    COHERE_API_KEY: Optional[str] = None
+    GENERATION_MODEL_ID: str = None
+    EMBEDDING_MODEL_ID: str = None
+    EMBEDDING_MODEL_SIZE: int = None
+    INPUT_DEFAULT_MAX_CHARACTERS: int = None
+    GENERATION_DEFAULT_MAX_TOKENS: int = None
+    GENERATION_DEFAULT_TEMPERATURE: float = None
+    
+    VECTOR_DB_BACKEND: str = None
+    VECTOR_DB_PATH: str = None
+    VECTOR_DB_DISTANCE_METHOD: str = None
 
     class Config:
         env_file = ".env"
